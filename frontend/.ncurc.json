@@ -1,0 +1,10 @@
+{
+  "upgrade": true,
+  "reject": [
+    "electron",
+    "eslint",
+    "@typescript-eslint/parser",
+    "@typescript-eslint/eslint-plugin",
+    "ts-jest"
+  ]
+}
