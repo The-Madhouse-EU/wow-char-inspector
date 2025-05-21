@@ -26,5 +26,5 @@
 ### Installation
 
 1. Download the Addons
-2. Download the Installer from the Release section 
+2. Download the Installer from the Release section ([releases](https://github.com/The-Madhouse-EU/wow-char-inspector/releases))
 3. Follow the Instruction in the Installer
