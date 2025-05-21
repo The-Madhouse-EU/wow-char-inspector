@@ -1,10 +1,5 @@
-import { dialog, shell } from 'electron';
-import {
-  BaseKernelModule,
-  IKernel,
-  InMemCache,
-  StoreGlobal,
-} from '@grandlinex/e-kernel';
+import { app, dialog, shell } from 'electron';
+import { BaseKernelModule, IKernel, InMemCache } from '@grandlinex/e-kernel';
 import axios from 'axios';
 import InitLoginAction from './action/login/InitLoginAction';
 import InitNewAction from './action/login/InitNewAction';
@@ -33,9 +28,7 @@ export default class MainModule extends BaseKernelModule<
 
     if (!this.getKernel().getDevMode()) {
       try {
-        const version = this.getKernel()
-          .getConfigStore()
-          .get(StoreGlobal.GLOBAL_APP_VERSION);
+        const version = app.getVersion();
 
         const release = await axios.get<{
           html_url: string;
