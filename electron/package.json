@@ -1,6 +1,6 @@
 {
   "name": "wow-char-inspector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "WoW - Char Inspector",
   "main": "dist/run.js",
   "types": "dist/run.d.ts",
