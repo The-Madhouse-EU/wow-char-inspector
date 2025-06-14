@@ -30,7 +30,12 @@ const ignore = [
 '.ncurc.json',
 '.prettierrc',
 'Jenkinsfile',
+'res/luaConvert.js',
+'res/*.yml',
+'res/*.json',
 'tsconfig.json',
+'makeWin32Installer.ps1',
+'.eslintignore',
 ];
 
 module.exports = {

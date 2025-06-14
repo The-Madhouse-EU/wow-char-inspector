@@ -26,10 +26,16 @@ import {
 import moment from 'moment';
 
 import { toast } from 'react-toastify';
-import getColorCode from '@/tools/ColorUtil';
-import { Character, PreloadData } from '@/lib';
+import { DataType, PreloadData } from '@/lib';
 import columnList, { TableColumn } from '@/columns';
 import DiffMap from '@/tools/DiffMap';
+import LevelChars from '@/component/LevelChars';
+import ClassRace from '@/component/ClassRace';
+import Statistics from '@/component/Statistics';
+import AppContext, {
+  AppContextData,
+  DefaultContextData,
+} from '@/context/AppContext';
 
 moment.locale('de');
 
@@ -96,12 +102,7 @@ const App = forwardRef<
     ];
   }, [preload.instanzen, preload.weekly]);
 
-  const [data, , reload] = useQData<{
-    chars: Character[];
-    missing: Character[];
-    classOverview: { id: any; max: any; total: any }[];
-    raceOverview: { id: any; max: any; total: any }[];
-  }>(async () => {
+  const [data, , reload] = useQData<DataType>(async () => {
     return window.glxApi.invoke('get-info', { preload: true });
   });
 
@@ -131,51 +132,7 @@ const App = forwardRef<
     },
   }));
 
-  const totals = useMemo(() => {
-    const maxRio =
-      data?.chars
-        ?.map((e) => e.meta.raw?.mp ?? 0)
-        .reduce((a, b) => Math.max(a, b), 0) ?? 0;
-    const maxIlv =
-      data?.chars
-        ?.map((e) => e.meta.raw?.il ?? 0)
-        .reduce((a, b) => Math.max(a, b), 0) ?? 0;
-
-    const goldSum =
-      data?.chars
-        ?.map((e) => e.meta.raw?.money ?? 0)
-        .reduce((a, b) => a + b, 0) ?? 0;
-
-    let gold;
-    const g = Math.trunc((goldSum || 0) / 10000);
-    if (g > 1000000) {
-      gold = `${Math.trunc(g / 1000000)} M`;
-    } else if (g > 1000) {
-      gold = `${Math.trunc(g / 1000)} K`;
-    } else {
-      gold = g.toString();
-    }
-
-    const timewalk =
-      data?.chars
-        .map((e) => e.meta.raw?.currency['1166'] ?? 0)
-        .reduce((a, b) => a + b, 0) ?? 0;
-    const playtimeSum =
-      data?.chars
-        .map((e) => e.meta.raw?.playedTotal ?? 0)
-        .reduce((a, b) => a + b, 0) ?? 0;
-
-    const playtime = moment.duration(playtimeSum, 'second').asDays().toFixed(2);
-    return {
-      gold,
-      timewalk,
-      playtime,
-      maxRio,
-      maxIlv,
-    };
-  }, [data]);
-
-  const map = useMemo(() => {
+  const classMap = useMemo(() => {
     const classList = new CMap<string, string>(preload?.classList || []);
     classList.set('Horde', '#c22222');
     classList.set('Allianz', '#2828d0');
@@ -254,9 +211,8 @@ const App = forwardRef<
             <Grid flex flexR hCenter style={{ color: 'green' }}>
               {char.meta.instances
                 ?.find((e) => e.instance === key)
-                ?.difficulties.map((d) => DiffMap.get(d)) || (
-                <span style={{ color: 'red' }}>frei</span>
-              )}
+                ?.difficulties.map((d) => DiffMap.get(d))
+                .join(' + ') || <span style={{ color: 'red' }}>frei</span>}
             </Grid>
           ),
           sort: (a, b) => {
@@ -294,513 +250,389 @@ const App = forwardRef<
     return charFilter.toSorted(sf.sort);
   }, [charFilter, getColumn, sort.key, sort.order]);
 
+  const contextData = useMemo<AppContextData>(
+    () =>
+      data
+        ? {
+            data,
+            classMap,
+          }
+        : DefaultContextData,
+    [classMap, data],
+  );
+
   if (!data || !preload || !config) {
     return <div>Loading...</div>;
   }
 
   return (
-    <Grid flex flexC className="app" gap={24}>
-      <h2>Übersicht</h2>
+    <AppContext.Provider value={contextData}>
+      <Grid flex flexC className="app" gap={24}>
+        <h2>Übersicht</h2>
 
-      <PortalStepper
-        offset={150}
-        className="stepper"
-        collapse
-        conf={[
-          {
-            key: 'settings',
-            name: 'Einstellungen',
-            collapsed: !!config?.profileFolder,
-            render: (
-              <>
-                <Grid flex flexR gap={24}>
-                  <Grid flex flexC>
-                    World of Warcraft Ordner:
-                    <pre>{config?.profileFolder}</pre>
-                    <Button
-                      onClick={() => {
-                        window.glxApi.invoke('set-config-folder').then(() => {
-                          reloadConfig();
-                          reloadPreload();
-                          reload();
-                        });
-                      }}
-                    >
-                      Auswählens
-                    </Button>
-                  </Grid>
-                  <Grid flex flexC style={{ fontSize: '24px' }}>
-                    <b>
-                      MadhousePack Addon:{' '}
-                      {config?.addon.mhAddon ? (
-                        <span style={{ color: 'green' }}>JA</span>
-                      ) : (
-                        <span style={{ color: 'red' }}>Nein</span>
-                      )}
-                    </b>
-                    <b>
-                      SavedInstances Addon:{' '}
-                      {config?.addon.siAddon ? (
-                        <span style={{ color: 'green' }}>JA</span>
-                      ) : (
-                        <span style={{ color: 'red' }}>Nein</span>
-                      )}
-                    </b>
-                  </Grid>
-                </Grid>
-                <pre
-                  style={{
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    padding: '8px',
-                    fontSize: '18px',
-                    color: 'gold',
-                  }}
-                >
-                  <b>Wichtig:</b>
-                  <br />
-                  Die App benötigt mindestens das 'MadhousePack Addon', und
-                  optional 'SavedInstances Addon' für Instanzen und wöchentliche
-                  quests.
-                </pre>
-              </>
-            ),
-          },
-          {
-            key: 'totals',
-            name: 'Statistiken',
-            collapse: false,
-            render: (
-              <Grid
-                flex
-                flexR
-                gap={24}
-                className="glx-py-12"
-                flexWrap
-                style={{ fontSize: '24px' }}
-              >
-                <Grid flex flexR style={{ color: 'gold' }}>
-                  <b>
-                    <span className="gold-img" /> Gesamt: {totals.gold}
-                  </b>
-                </Grid>
-                <Grid flex flexR style={{ color: 'lightblue' }} gap={8}>
-                  <span className="timewalk-img" />{' '}
-                  <b>Zeitwanderungs Abzeichen: {totals.timewalk}</b>
-                </Grid>
-                <Grid flex flexR gap={8}>
-                  <b>Spielzeit in Tagen: {totals.playtime}</b>
-                </Grid>
-                <Grid flex flexR gap={8}>
-                  <b>
-                    Höchste M+ Wertung:{' '}
-                    <span
-                      style={{
-                        color: getColorCode(totals.maxRio),
-                      }}
-                    >
-                      {totals.maxRio}
-                    </span>
-                  </b>
-                </Grid>
-                <Grid flex flexR gap={8}>
-                  <b>
-                    Höchstes Item Level:{' '}
-                    <span
-                      style={{
-                        color: getColorCode(totals.maxIlv, 670, 600),
-                      }}
-                    >
-                      {totals.maxIlv.toFixed(0)}
-                    </span>
-                  </b>
-                </Grid>
-              </Grid>
-            ),
-          },
-          {
-            key: 'table',
-            name: 'Tabellen Einstellungen',
-            collapsed: true,
-            render: (
-              <Grid flex flexC gap={24} className="glx-py-12" flexWrap>
-                <h5>Ausgewählt</h5>
-                <Grid flex flexR gap={4} flexWrap>
-                  {colList
-                    .filter((e) => colFilter.includes(e.key))
-                    .map((c) => (
-                      <button
-                        type="button"
-                        className="col-filter-button"
+        <PortalStepper
+          offset={150}
+          className="stepper"
+          collapse
+          conf={[
+            {
+              key: 'settings',
+              name: 'Einstellungen',
+              collapsed: !!config?.profileFolder,
+              render: (
+                <>
+                  <Grid flex flexR gap={24}>
+                    <Grid flex flexC>
+                      World of Warcraft Ordner:
+                      <pre>{config?.profileFolder}</pre>
+                      <Button
                         onClick={() => {
-                          if (colFilter.length > 1) {
-                            const list = colFilter.filter((e) => e !== c.key);
+                          window.glxApi.invoke('set-config-folder').then(() => {
+                            reloadConfig();
+                            reloadPreload();
+                            reload();
+                          });
+                        }}
+                      >
+                        Auswählens
+                      </Button>
+                    </Grid>
+                    <Grid flex flexC style={{ fontSize: '24px' }}>
+                      <b>
+                        App Version:{' '}
+                        <span style={{ color: 'var(--glx-main-contrast)' }}>
+                          {preload.appVersion}
+                        </span>
+                      </b>
+                      <b>
+                        MadhousePack Addon:{' '}
+                        {config?.addon.mhAddon ? (
+                          <span style={{ color: 'green' }}>JA</span>
+                        ) : (
+                          <span style={{ color: 'red' }}>Nein</span>
+                        )}
+                      </b>
+                      <b>
+                        SavedInstances Addon:{' '}
+                        {config?.addon.siAddon ? (
+                          <span style={{ color: 'green' }}>JA</span>
+                        ) : (
+                          <span style={{ color: 'red' }}>Nein</span>
+                        )}
+                      </b>
+                    </Grid>
+                  </Grid>
+                  <pre
+                    style={{
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      padding: '8px',
+                      fontSize: '18px',
+                      color: 'gold',
+                    }}
+                  >
+                    <b>Wichtig:</b>
+                    <br />
+                    Die App benötigt mindestens das 'MadhousePack Addon', und
+                    optional 'SavedInstances Addon' für Instanzen und
+                    wöchentliche quests.
+                  </pre>
+                </>
+              ),
+            },
+            {
+              key: 'totals',
+              name: 'Statistiken',
+              collapse: false,
+              render: <Statistics />,
+            },
+            {
+              key: 'table',
+              name: 'Tabellen Einstellungen',
+              collapsed: true,
+              render: (
+                <Grid flex flexC gap={24} className="glx-py-12" flexWrap>
+                  <h5>Ausgewählt</h5>
+                  <Grid flex flexR gap={4} flexWrap>
+                    {colList
+                      .filter((e) => colFilter.includes(e.key))
+                      .map((c) => (
+                        <button
+                          type="button"
+                          className="col-filter-button"
+                          onClick={() => {
+                            if (colFilter.length > 1) {
+                              const list = colFilter.filter((e) => e !== c.key);
+                              LocalStorage.jsonSave<string[]>('filter', list);
+                              setColFilter(list);
+                            }
+                          }}
+                        >
+                          <Grid flex flexR gap={4} center>
+                            {c.title}
+                          </Grid>
+                        </button>
+                      ))}
+                  </Grid>
+                  <h5>Verfügbar - Allgemein</h5>
+                  <Grid flex flexR gap={4} flexWrap>
+                    {colList
+                      .filter((e) => e.type === 0 && !colFilter.includes(e.key))
+                      .map((c) => (
+                        <button
+                          type="button"
+                          className="col-filter-button"
+                          onClick={() => {
+                            const list = [...colFilter, c.key];
                             LocalStorage.jsonSave<string[]>('filter', list);
                             setColFilter(list);
-                          }
-                        }}
-                      >
-                        <Grid flex flexR gap={4} center>
-                          {c.title}
-                        </Grid>
-                      </button>
-                    ))}
-                </Grid>
-                <h5>Verfügbar - Allgemein</h5>
-                <Grid flex flexR gap={4} flexWrap>
-                  {colList
-                    .filter((e) => e.type === 0 && !colFilter.includes(e.key))
-                    .map((c) => (
-                      <button
-                        type="button"
-                        className="col-filter-button"
-                        onClick={() => {
-                          const list = [...colFilter, c.key];
-                          LocalStorage.jsonSave<string[]>('filter', list);
-                          setColFilter(list);
-                        }}
-                      >
-                        <Grid flex flexR gap={4} center>
-                          {c.title}
-                        </Grid>
-                      </button>
-                    ))}
-                </Grid>
+                          }}
+                        >
+                          <Grid flex flexR gap={4} center>
+                            {c.title}
+                          </Grid>
+                        </button>
+                      ))}
+                  </Grid>
 
-                <h5>Verfügbar - Weekly</h5>
-                <Grid flex flexR gap={4} flexWrap>
-                  {colList
-                    .filter((e) => e.type === 1 && !colFilter.includes(e.key))
-                    .map((c) => (
-                      <button
-                        type="button"
-                        className="col-filter-button"
-                        onClick={() => {
-                          const list = [...colFilter, c.key];
-                          LocalStorage.jsonSave<string[]>('filter', list);
-                          setColFilter(list);
-                        }}
-                      >
-                        <Grid flex flexR gap={4} center>
-                          {c.title}
+                  <h5>Verfügbar - Weekly</h5>
+                  <Grid flex flexR gap={4} flexWrap>
+                    {colList
+                      .filter((e) => e.type === 1 && !colFilter.includes(e.key))
+                      .map((c) => (
+                        <button
+                          type="button"
+                          className="col-filter-button"
+                          onClick={() => {
+                            const list = [...colFilter, c.key];
+                            LocalStorage.jsonSave<string[]>('filter', list);
+                            setColFilter(list);
+                          }}
+                        >
+                          <Grid flex flexR gap={4} center>
+                            {c.title}
+                          </Grid>
+                        </button>
+                      ))}
+                  </Grid>
+                  {[
+                    {
+                      x: 0,
+                      name: 'Classic',
+                    },
+                    {
+                      x: 1,
+                      name: 'Burning Crusade',
+                    },
+                    {
+                      x: 2,
+                      name: 'WotLK',
+                    },
+                    {
+                      x: 3,
+                      name: 'Cata',
+                    },
+                    {
+                      x: 4,
+                      name: 'MoP',
+                    },
+                    {
+                      x: 5,
+                      name: 'WoD',
+                    },
+                    {
+                      x: 6,
+                      name: 'Legion',
+                    },
+                    {
+                      x: 7,
+                      name: 'BfA',
+                    },
+                    {
+                      x: 8,
+                      name: 'Shadowlands',
+                    },
+                    {
+                      x: 9,
+                      name: 'Dragonflight',
+                    },
+                    {
+                      x: 10,
+                      name: 'The War Within',
+                    },
+                  ]
+                    .toReversed()
+                    .map(({ x, name }) => (
+                      <>
+                        <h5>Instanzen - {name}</h5>
+                        <Grid flex flexR gap={4} flexWrap>
+                          {colList
+                            .filter(
+                              (e) =>
+                                e.type === 2 &&
+                                e.mod === x &&
+                                !colFilter.includes(e.key),
+                            )
+                            .map((c) => (
+                              <button
+                                type="button"
+                                className="col-filter-button"
+                                onClick={() => {
+                                  const list = [...colFilter, c.key];
+                                  LocalStorage.jsonSave<string[]>(
+                                    'filter',
+                                    list,
+                                  );
+                                  setColFilter(list);
+                                }}
+                              >
+                                <Grid flex flexR gap={4} center>
+                                  {c.title}
+                                </Grid>
+                              </button>
+                            ))}
                         </Grid>
-                      </button>
+                      </>
                     ))}
                 </Grid>
-                {[
-                  {
-                    x: 0,
-                    name: 'Classic',
-                  },
-                  {
-                    x: 1,
-                    name: 'Burning Crusade',
-                  },
-                  {
-                    x: 2,
-                    name: 'WotLK',
-                  },
-                  {
-                    x: 3,
-                    name: 'Cata',
-                  },
-                  {
-                    x: 4,
-                    name: 'MoP',
-                  },
-                  {
-                    x: 5,
-                    name: 'WoD',
-                  },
-                  {
-                    x: 6,
-                    name: 'Legion',
-                  },
-                  {
-                    x: 7,
-                    name: 'BfA',
-                  },
-                  {
-                    x: 8,
-                    name: 'Shadowlands',
-                  },
-                  {
-                    x: 9,
-                    name: 'Dragonflight',
-                  },
-                  {
-                    x: 10,
-                    name: 'The War Within',
-                  },
-                ]
-                  .toReversed()
-                  .map(({ x, name }) => (
-                    <>
-                      <h5>Instanzen - {name}</h5>
-                      <Grid flex flexR gap={4} flexWrap>
-                        {colList
-                          .filter(
-                            (e) =>
-                              e.type === 2 &&
-                              e.mod === x &&
-                              !colFilter.includes(e.key),
-                          )
-                          .map((c) => (
-                            <button
-                              type="button"
-                              className="col-filter-button"
-                              onClick={() => {
-                                const list = [...colFilter, c.key];
-                                LocalStorage.jsonSave<string[]>('filter', list);
-                                setColFilter(list);
-                              }}
-                            >
-                              <Grid flex flexR gap={4} center>
-                                {c.title}
-                              </Grid>
-                            </button>
-                          ))}
-                      </Grid>
-                    </>
-                  ))}
-              </Grid>
-            ),
-          },
-          {
-            key: 'chars',
-            name: `Charaktere (${charFilter.length})`,
-            render: (
-              <>
-                <Grid flex flexR className="glx-mb-12" gap={8} vCenter>
-                  <input
-                    className="search-field"
-                    type="text"
-                    placeholder="Filter/Suche (Name,Server,Klasse,Rasse,Level,Fraktion)"
-                    style={{ width: 400 }}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                  {search !== '' && (
-                    <button onClick={() => setSearch('')}>
-                      <IOClose />
-                    </button>
-                  )}
-                  <div>Ansichten:</div>
-                  <Tooltip text="Alle Elemente Anzeigen">
-                    <button
-                      type="button"
-                      disabled={mode === 'all'}
-                      onClick={() => setMode('all')}
-                    >
-                      <IOGlobe />
-                    </button>
-                  </Tooltip>
-                  <Tooltip text="Nur Weeklys anzeigen">
-                    <button
-                      type="button"
-                      disabled={mode === 'weekly'}
-                      onClick={() => setMode('weekly')}
-                    >
-                      <IOTime />
-                    </button>
-                  </Tooltip>
-                  <Tooltip text="Nur Instanzen anzeigen">
-                    <button
-                      type="button"
-                      disabled={mode === 'instance'}
-                      onClick={() => setMode('instance')}
-                    >
-                      <IODice />
-                    </button>
-                  </Tooltip>
-                </Grid>
-                <div className="table-wrapper">
-                  <table>
-                    <thead>
-                      <tr>
-                        {colList
-                          .filter((e) => modeColFilter.includes(e.key))
-                          .map((e) => getColumn(e.key))
-                          .map((col) => (
-                            <th
-                              onClick={(e) => {
-                                e.preventDefault();
-                                if (col.sort) {
-                                  if (
-                                    sort.key !== col.key ||
-                                    sort.order === 'DSC'
-                                  ) {
-                                    setSort({
-                                      key: col.key,
-                                      order: 'ASC',
-                                    });
-                                  } else {
-                                    setSort({
-                                      key: col.key,
-                                      order: 'DSC',
-                                    });
-                                  }
-                                }
-                              }}
-                            >
-                              <Grid
-                                flex
-                                flexR
-                                center
-                                gap={4}
-                                className={[[!!col.sort, 'can-sort']]}
-                              >
-                                {col.title}
-                                {col.key === sort.key &&
-                                  sort.order === 'DSC' && <IOChevronUp />}
-                                {col.key === sort.key &&
-                                  sort.order === 'ASC' && <IOChevronDown />}
-                                {col.key !== sort.key && (
-                                  <span className="hover-sort">
-                                    <IOChevronDown />
-                                  </span>
-                                )}
-                                {col.key !== sort.key && (
-                                  <span className="pending-sort">
-                                    <IOChevronForward />
-                                  </span>
-                                )}
-                              </Grid>
-                            </th>
-                          ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortData.map((char) => (
+              ),
+            },
+            {
+              key: 'chars',
+              name: `Charaktere (${charFilter.length})`,
+              render: (
+                <>
+                  <Grid flex flexR className="glx-mb-12" gap={8} vCenter>
+                    <input
+                      className="search-field"
+                      type="text"
+                      placeholder="Filter/Suche (Name,Server,Klasse,Rasse,Level,Fraktion)"
+                      style={{ width: 400 }}
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                    {search !== '' && (
+                      <button onClick={() => setSearch('')}>
+                        <IOClose />
+                      </button>
+                    )}
+                    <div>Ansichten:</div>
+                    <Tooltip text="Alle Elemente Anzeigen">
+                      <button
+                        type="button"
+                        disabled={mode === 'all'}
+                        onClick={() => setMode('all')}
+                      >
+                        <IOGlobe />
+                      </button>
+                    </Tooltip>
+                    <Tooltip text="Nur Weeklys anzeigen">
+                      <button
+                        type="button"
+                        disabled={mode === 'weekly'}
+                        onClick={() => setMode('weekly')}
+                      >
+                        <IOTime />
+                      </button>
+                    </Tooltip>
+                    <Tooltip text="Nur Instanzen anzeigen">
+                      <button
+                        type="button"
+                        disabled={mode === 'instance'}
+                        onClick={() => setMode('instance')}
+                      >
+                        <IODice />
+                      </button>
+                    </Tooltip>
+                  </Grid>
+                  <div className="table-wrapper">
+                    <table>
+                      <thead>
                         <tr>
                           {colList
                             .filter((e) => modeColFilter.includes(e.key))
                             .map((e) => getColumn(e.key))
                             .map((col) => (
-                              <td style={col.style}>{col.render(char, map)}</td>
+                              <th
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (col.sort) {
+                                    if (
+                                      sort.key !== col.key ||
+                                      sort.order === 'DSC'
+                                    ) {
+                                      setSort({
+                                        key: col.key,
+                                        order: 'ASC',
+                                      });
+                                    } else {
+                                      setSort({
+                                        key: col.key,
+                                        order: 'DSC',
+                                      });
+                                    }
+                                  }
+                                }}
+                              >
+                                <Grid
+                                  flex
+                                  flexR
+                                  center
+                                  gap={4}
+                                  className={[[!!col.sort, 'can-sort']]}
+                                >
+                                  {col.title}
+                                  {col.key === sort.key &&
+                                    sort.order === 'DSC' && <IOChevronUp />}
+                                  {col.key === sort.key &&
+                                    sort.order === 'ASC' && <IOChevronDown />}
+                                  {col.key !== sort.key && (
+                                    <span className="hover-sort">
+                                      <IOChevronDown />
+                                    </span>
+                                  )}
+                                  {col.key !== sort.key && (
+                                    <span className="pending-sort">
+                                      <IOChevronForward />
+                                    </span>
+                                  )}
+                                </Grid>
+                              </th>
                             ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            ),
-          },
-          {
-            key: 'klassandrass',
-            name: 'Klassen & Rassen',
-            render: (
-              <Grid flex flexR className="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Anzahl</th>
-                      <th>Anzahl - Lvl. 80</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.raceOverview.map(({ id, max, total }) => (
-                      <tr>
-                        <td>{id}</td>
-                        <td>{total}</td>
-                        <td
-                          style={{
-                            color: max > 0 ? 'green' : 'red',
-                          }}
-                        >
-                          {max}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Anzahl</th>
-                      <th>Anzahl - Lvl. 80</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.classOverview.map(({ id, max, total }) => (
-                      <tr>
-                        <td
-                          style={{
-                            color: map.get(id),
-                          }}
-                        >
-                          {id}
-                        </td>
-                        <td>{total}</td>
-                        <td
-                          style={{
-                            color: max > 0 ? 'green' : 'red',
-                          }}
-                        >
-                          {max}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Grid>
-            ),
-          },
-          {
-            key: 'level',
-            name: `Level Liste (${data.missing.length})`,
-            render: (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Server</th>
-                    <th>Level</th>
-                    <th>Klasse</th>
-                    <th>Rasse</th>
-                    <th>Fraktion</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.missing.map(
-                    ({ name, server, level, playerClass, rase, faction }) => (
-                      <tr>
-                        <td>{name}</td>
-                        <td>{server}</td>
-                        <td
-                          style={{
-                            color: getColorCode(level, 80),
-                          }}
-                        >
-                          {level}
-                        </td>
-                        <td
-                          style={{
-                            color: map.get(playerClass),
-                          }}
-                        >
-                          {playerClass}
-                        </td>
-                        <td>{rase}</td>
-                        <td
-                          style={{
-                            color: map.get(faction),
-                          }}
-                        >
-                          {faction}
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </tbody>
-              </table>
-            ),
-          },
-        ]}
-      />
-    </Grid>
+                      </thead>
+                      <tbody>
+                        {sortData.map((char) => (
+                          <tr>
+                            {colList
+                              .filter((e) => modeColFilter.includes(e.key))
+                              .map((e) => getColumn(e.key))
+                              .map((col) => (
+                                <td style={col.style}>
+                                  {col.render(char, classMap)}
+                                </td>
+                              ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ),
+            },
+            {
+              key: 'klassandrass',
+              name: 'Klassen & Rassen',
+              render: <ClassRace />,
+            },
+            {
+              key: 'level',
+              name: `Level Liste (${data.missing.length})`,
+              render: <LevelChars />,
+            },
+          ]}
+        />
+      </Grid>
+    </AppContext.Provider>
   );
 });
 

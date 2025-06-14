@@ -25,6 +25,14 @@ export type MHCharMeta = {
   level: number;
   zone: string;
   currency: Record<string, number>;
+  profession: {
+    id: number;
+    type: string;
+    name: string;
+    skillLevel: number;
+    maxSkillLevel: number;
+    specializationIndex: number;
+  }[];
   meta: boolean;
   faction: string;
   guildName: string;
@@ -35,6 +43,11 @@ export type MHData = NonNullable<ReturnType<typeof MHParser>>;
 
 export default function MHParser(inp: string) {
   const itemArr: MHCharMeta[] = [];
+  const global: {
+    warBankGold: number;
+  } = {
+    warBankGold: 0,
+  };
 
   try {
     const chunks = parseLua(inp, { comments: false });
@@ -51,7 +64,20 @@ export default function MHParser(inp: string) {
               l1.fields.forEach((l2) => {
                 if (l2.type === 'TableKey' && l2.key.type === 'StringLiteral') {
                   const key = getRawString(l2.key.raw);
-                  if (key !== 'global') {
+                  if (key === 'global') {
+                    if (l2.value.type === 'TableConstructorExpression') {
+                      l2.value.fields.forEach((l3) => {
+                        if (
+                          l3.type === 'TableKey' &&
+                          l3.key.type === 'StringLiteral' &&
+                          getRawString(l3.key.raw) === 'warbank-gold' &&
+                          l3.value.type === 'NumericLiteral'
+                        ) {
+                          global.warBankGold = l3.value.value;
+                        }
+                      });
+                    }
+                  } else {
                     const split = key.split('-');
                     const name = split[0];
                     const server = split.slice(1).join('-');
@@ -82,6 +108,7 @@ export default function MHParser(inp: string) {
                       spec: '',
                       mpKey: '',
                       mpKeyTimeOut: 0,
+                      profession: [],
                     };
                     if (l2.value.type === 'TableConstructorExpression') {
                       l2.value.fields.forEach((l3) => {
@@ -283,6 +310,102 @@ export default function MHParser(inp: string) {
                                           meta.level = l4.value.value;
                                         }
                                         break;
+                                      // ############### RECORD ###############
+                                      case 'profession':
+                                        if (
+                                          l4.value.type ===
+                                          'TableConstructorExpression'
+                                        ) {
+                                          l4.value.fields.forEach((l5) => {
+                                            const prof: MHCharMeta['profession'][number] =
+                                              {
+                                                id: -1,
+                                                type: '',
+                                                name: '',
+                                                skillLevel: -1,
+                                                maxSkillLevel: -1,
+                                                specializationIndex: -1,
+                                              };
+                                            if (
+                                              l5.type === 'TableKey' &&
+                                              l5.key.type === 'StringLiteral' &&
+                                              l5.value.type ===
+                                                'TableConstructorExpression'
+                                            ) {
+                                              const keyL5 = getRawString(
+                                                l5.key.raw,
+                                              );
+                                              prof.type = keyL5;
+                                              l5.value.fields.forEach((l6) => {
+                                                if (
+                                                  l6.type === 'TableKey' &&
+                                                  l6.key.type ===
+                                                    'StringLiteral'
+                                                ) {
+                                                  const l6Key = getRawString(
+                                                    l6.key.raw,
+                                                  );
+                                                  switch (l6Key) {
+                                                    // ############### string ###############
+                                                    case 'name':
+                                                      if (
+                                                        l6.value.type ===
+                                                        'StringLiteral'
+                                                      ) {
+                                                        prof.name =
+                                                          getRawString(
+                                                            l6.value.raw,
+                                                          );
+                                                      }
+                                                      break;
+                                                    // ############### numbers ###############
+                                                    case 'skillLevel':
+                                                      if (
+                                                        l6.value.type ===
+                                                        'NumericLiteral'
+                                                      ) {
+                                                        prof.skillLevel =
+                                                          l6.value.value;
+                                                      }
+                                                      break;
+                                                    case 'id':
+                                                      if (
+                                                        l6.value.type ===
+                                                        'NumericLiteral'
+                                                      ) {
+                                                        prof.id =
+                                                          l6.value.value;
+                                                      }
+                                                      break;
+                                                    case 'specializationIndex':
+                                                      if (
+                                                        l6.value.type ===
+                                                        'NumericLiteral'
+                                                      ) {
+                                                        prof.specializationIndex =
+                                                          l6.value.value;
+                                                      }
+                                                      break;
+                                                    case 'maxSkillLevel':
+                                                      if (
+                                                        l6.value.type ===
+                                                        'NumericLiteral'
+                                                      ) {
+                                                        prof.maxSkillLevel =
+                                                          l6.value.value;
+                                                      }
+                                                      break;
+                                                    default:
+                                                  }
+                                                }
+                                              });
+                                            }
+                                            if (prof.id !== -1) {
+                                              meta.profession.push(prof);
+                                            }
+                                          });
+                                        }
+                                        break;
                                       default:
                                     }
                                   }
@@ -308,6 +431,7 @@ export default function MHParser(inp: string) {
 
     return {
       itemArr,
+      global,
     };
   } catch (e) {
     console.error('Error parsing Lua file:', e);

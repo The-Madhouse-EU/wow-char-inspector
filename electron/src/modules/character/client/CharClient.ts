@@ -319,7 +319,7 @@ export default class CharClient extends CoreClient<ICoreKernel<any>, CharDB> {
     return null;
   }
 
-  async loadMadhouseData(): Promise<MHData['itemArr'] | null> {
+  async loadMadhouseData(): Promise<MHData | null> {
     const folder = await this.getKernel()
       .getModule()
       .getDb()
@@ -339,7 +339,7 @@ export default class CharClient extends CoreClient<ICoreKernel<any>, CharDB> {
           this.error(`Error while parsing SI data`);
           return null;
         }
-        return parser.itemArr;
+        return parser;
       }
       this.warn('MadhousePack not exist');
     }
@@ -391,7 +391,8 @@ export default class CharClient extends CoreClient<ICoreKernel<any>, CharDB> {
     const data = await this.loadMadhouseData();
     const charSet = new Set<string>();
     if (data) {
-      for (const char of data) {
+      await db.setConfig('global-data', JSON.stringify(data.global));
+      for (const char of data.itemArr) {
         charSet.add(char.guid);
         const exist = await db.chars.getObjById(char.guid);
         const race = (await db.race.getObjById(char.raceID.toString()))!;

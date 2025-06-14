@@ -1,3 +1,6 @@
+import { forwardRef, useState } from 'react';
+import { AppParentFunction } from '@/App';
+
 export type CharMeta = {
   guid: string;
   character: string;
@@ -20,6 +23,14 @@ export type CharMeta = {
   level: number;
   zone: string;
   currency: Record<string, number>;
+  profession: {
+    id: number;
+    type: string;
+    name: string;
+    skillLevel: number;
+    maxSkillLevel: number;
+    specializationIndex: number;
+  }[];
   meta: boolean;
   faction: string;
   guildName: string;
@@ -61,7 +72,16 @@ export interface Instanzen {
 }
 
 export type PreloadData = {
+  appVersion: string;
   classList: [string, string][];
   weekly: Weekly[];
   instanzen: Instanzen[];
+};
+
+export type DataType = {
+  global: Record<string, any>;
+  chars: Character[];
+  missing: Character[];
+  classOverview: { id: any; max: any; total: any }[];
+  raceOverview: { id: any; max: any; total: any }[];
 };

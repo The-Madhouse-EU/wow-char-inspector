@@ -4,6 +4,7 @@ import {
   IBaseKernelModule,
   IKernel,
 } from '@grandlinex/e-kernel';
+import { app } from 'electron';
 import CharDB from '../db/CharDB';
 import CharClient from '../client/CharClient';
 
@@ -31,6 +32,7 @@ export default class PreloadAction extends BaseAction<
     );
 
     return {
+      appVersion: app.getVersion(),
       classList: Array.from(classList),
       weekly: await db.weekly.getObjList({
         order: [{ key: 'e_id', order: 'ASC' }],

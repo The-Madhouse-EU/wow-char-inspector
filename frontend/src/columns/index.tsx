@@ -325,6 +325,25 @@ const columnList: TableColumn[] = [
         : '??',
     sort: intMetaSort('lastSeen'),
   },
+  ...[
+    ['prof1', 'Beruf 1'],
+    ['prof2', 'Beruf 2'],
+    ['cooking', 'Kochkunst'],
+    ['archaeology', 'Archäologie'],
+    ['fishing', 'Angeln'],
+  ].map<TableColumn>(([key, name]) => ({
+    key,
+    title: name,
+    render: ({ meta }) => {
+      const prof = meta.raw?.profession.find((e) => e.type === key);
+      if (!prof) return <span style={{ color: 'gray' }}>Nicht Erlernt</span>;
+      return (
+        <span>
+          {prof.name} ({prof.skillLevel}/{prof.maxSkillLevel})
+        </span>
+      );
+    },
+  })),
 ];
 
 export default columnList;

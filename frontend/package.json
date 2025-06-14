@@ -1,10 +1,10 @@
 {
   "name": "frontend",
-  "version": "1.0.2",
+  "version": "1.1.0-",
   "private": true,
   "dependencies": {
-    "@grandlinex/react-components": "0.10.0-alpha.6",
-    "axios": "1.9.0",
+    "@grandlinex/react-components": "0.10.0-alpha.9",
+    "axios": "1.10.0",
     "moment": "2.30.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
