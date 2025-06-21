@@ -236,7 +236,7 @@ const columnList: TableColumn[] = [
     title: 'Vault/M+',
     render: ({ meta }) => (
       <Grid flex flexR gap={4} className="button-row">
-        <div>{meta.vault?.v1.map((e) => e.toString()).join(', ')}</div>
+        <div>{meta.vault?.v1.map((e) => e?.toString() ?? '').join(', ')}</div>
       </Grid>
     ),
   },
@@ -245,7 +245,7 @@ const columnList: TableColumn[] = [
     title: 'Vault/Raid',
     render: ({ meta }) => (
       <Grid flex flexR gap={4} className="button-row">
-        <div>{meta.vault?.v2.map((e) => e.toString()).join(', ')}</div>
+        <div>{meta.vault?.v2.map((e) => e?.toString() ?? '').join(', ')}</div>
       </Grid>
     ),
   },
@@ -254,7 +254,7 @@ const columnList: TableColumn[] = [
     title: 'Vault/Delve',
     render: ({ meta }) => (
       <Grid flex flexR gap={4} className="button-row">
-        <div>{meta.vault?.v3.map((e) => e.toString()).join(', ')}</div>
+        <div>{meta.vault?.v3.map((e) => e?.toString() ?? '').join(', ')}</div>
       </Grid>
     ),
   },
