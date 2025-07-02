@@ -22,6 +22,7 @@ $header-height: 64px;
   --text-color: #e0e0e0;
   --accent-color: #1f1f1f;
   --border-color: #2c2c2c;
+  --border-color-alt: #5d5d5d;
   --highlight-color: #ffffff;
   --hover-color: #2a2a2a;
   --toastify-toast-top: 64px;
@@ -161,7 +162,7 @@ a:hover {
 
 .app{
   width: calc(100% - 64px);
-  height: calc(100% - 100px);
+  height: calc(100% - 4px);
 }
 
 .stepper{
@@ -267,8 +268,69 @@ th > .can-sort {
 }
 
 .col-filter-button{
+  border-radius: 4px;
   background: var(--accent-color);
-  border-color: var(--border-color);;
+  border-color: var(--border-color-alt);;
   padding: 8px;
   font-size: 14pt;
+}
+
+
+.sidebar--title{
+  display: none;
+}
+.sidebar-wrapper {
+  width: 34px;
+  border-right: 1px solid $main-accent-03;
+}
+
+.sidebar-wrapper--open{
+  width: 300px;
+  .sidebar--title{
+    display:block;
+    white-space: nowrap;
+  }
+}
+
+
+
+
+@media screen and (max-width: 600px) {
+  .sidebar-wrapper--open{
+    width: calc(100% - 17px);
+    background-color: $main-background;
+    top: 70px;
+    height: calc(100% - 70px);
+    position: absolute;
+    z-index: 999;
+    .glx-tooltip-children{
+      min-width: 200px;
+      display: block;
+    }
+  }
+}
+
+.sidebar-element--toggle{
+  width: 18px;
+}
+.sidebar-element {
+  @extend .glx-flex, .glx-flex-r, .glx-flex-v-center, .glx-flex-g-8, .glx-pointer, .glx-p-8;
+  border-radius: 8px;
+}
+
+.sidebar-element:hover {
+  background: $main-accent-04;
+  color: white;
+}
+
+.sidebar-element--active {
+  background: $main-accent-05;
+  color: white;
+}
+.sx-main-frame{
+  height: calc(100% - 4px);
+  width: 100%;
+}
+.sx-header{
+  border-bottom: 1px solid $main-accent-03;
 }

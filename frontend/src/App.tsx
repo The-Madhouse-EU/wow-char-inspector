@@ -10,9 +10,7 @@ import {
   Button,
   CheckBox,
   CMap,
-  Form,
   Grid,
-  InputOptionType,
   IOCheckmarkDone,
   IOChevronDown,
   IOChevronForward,
@@ -22,7 +20,6 @@ import {
   IOGlobe,
   IOTime,
   LocalStorage,
-  PortalStepper,
   Tooltip,
   useQData,
 } from '@grandlinex/react-components';
@@ -40,6 +37,9 @@ import AppContext, {
   DefaultContextData,
 } from '@/context/AppContext';
 import { Instance, Raid, Weekly } from '@/component/Ico';
+import { MainFrame, MainFrameItem } from '@/component/MainFrame';
+import InfoBox from '@/component/InfoBox';
+import FilterPage from '@/component/FilterPage';
 
 moment.locale('de');
 
@@ -56,7 +56,6 @@ const App = forwardRef<
   }
 >(({ preload, reloadPreload }, ref) => {
   const [search, setSearch] = useState('');
-  const [filterSearch, setFilterSearch] = useState('');
 
   const [colFilter, setColFilter] = useState<string[]>(
     LocalStorage.jsonLoad<string[]>('filter') || columnList.map((e) => e.key),
@@ -112,19 +111,6 @@ const App = forwardRef<
       })),
     ];
   }, [preload.instanzen, preload.weekly]);
-  const colX = useMemo(() => {
-    if (!filterSearch || filterSearch === '') {
-      return colList;
-    }
-    const lower = filterSearch.toLowerCase();
-    return colList.filter((c) => {
-      return (
-        (typeof c.title === 'string'
-          ? c.title.toLowerCase().includes(lower)
-          : false) || c.key.toLowerCase().includes(lower)
-      );
-    });
-  }, [colList, filterSearch]);
 
   const [data, , reload] = useQData<DataType>(async () => {
     return window.glxApi.invoke('get-info', { preload: true });
@@ -302,405 +288,225 @@ const App = forwardRef<
 
   return (
     <AppContext.Provider value={contextData}>
-      <Grid flex flexC className="app" gap={24}>
-        <h2>Übersicht</h2>
-        <PortalStepper
-          offset={150}
-          className="stepper"
-          collapse
-          conf={[
-            {
-              key: 'settings',
-              name: 'Einstellungen',
-              collapsed: !!config?.profileFolder,
-              render: (
-                <>
-                  <Grid flex flexR gap={24}>
-                    <Grid flex flexC>
-                      World of Warcraft Ordner:
-                      <pre>{config?.profileFolder}</pre>
-                      <Button
-                        onClick={() => {
-                          window.glxApi.invoke('set-config-folder').then(() => {
-                            reloadConfig();
-                            reloadPreload();
-                            reload();
-                          });
-                        }}
-                      >
-                        Auswählens
-                      </Button>
-                    </Grid>
-                    <Grid flex flexC style={{ fontSize: '24px' }}>
-                      <b>
-                        App Version:{' '}
-                        <span style={{ color: 'var(--glx-main-contrast)' }}>
-                          {preload.appVersion}
-                        </span>
-                      </b>
-                      <b>
-                        MadhousePack Addon:{' '}
-                        {config?.addon.mhAddon ? (
-                          <span style={{ color: 'green' }}>JA</span>
-                        ) : (
-                          <span style={{ color: 'red' }}>Nein</span>
-                        )}
-                      </b>
-                      <b>
-                        SavedInstances Addon:{' '}
-                        {config?.addon.siAddon ? (
-                          <span style={{ color: 'green' }}>JA</span>
-                        ) : (
-                          <span style={{ color: 'red' }}>Nein</span>
-                        )}
-                      </b>
-                    </Grid>
-                  </Grid>
-                  <pre
-                    style={{
-                      backgroundColor: 'rgba(0,0,0,0.5)',
-                      padding: '8px',
-                      fontSize: '18px',
-                      color: 'gold',
+      <MainFrame defaultFrame={!config?.profileFolder ? 'settings' : 'home'}>
+        <MainFrameItem frameKey="home" name="Home" icon="IOHome">
+          <Grid flex flexC className="app" gap={24}>
+            <h2>Übersicht</h2>
+            <Statistics />
+            <>
+              <Grid flex flexR className="glx-mb-12" gap={8} vCenter>
+                <input
+                  className="search-field"
+                  type="text"
+                  placeholder="Filter/Suche (Name,Server,Klasse,Rasse,Level,Fraktion)"
+                  style={{ width: 400 }}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                {search !== '' && (
+                  <button onClick={() => setSearch('')}>
+                    <IOClose />
+                  </button>
+                )}
+                <Grid flex flexR vCenter gap={4}>
+                  <CheckBox
+                    checked={onlyMax}
+                    onChange={(e) => {
+                      setOnlyMax(e);
+                      LocalStorage.flagSave('max-only', e);
                     }}
-                  >
-                    <b>Wichtig:</b>
-                    <br />
-                    Die App benötigt mindestens das 'MadhousePack Addon', und
-                    optional 'SavedInstances Addon' für Instanzen und
-                    wöchentliche quests.
-                  </pre>
-                </>
-              ),
-            },
-            {
-              key: 'totals',
-              name: 'Statistiken',
-              collapse: false,
-              render: <Statistics />,
-            },
-            {
-              key: 'table',
-              name: 'Tabellen Einstellungen',
-              collapsed: true,
-              render: (
-                <Grid flex flexC gap={24} className="glx-py-12" flexWrap>
-                  <Grid flex flexR gap={4} flexWrap>
-                    <Form
-                      defaultState={{
-                        search: filterSearch,
-                      }}
-                      options={[
-                        [
-                          {
-                            key: 'search',
-                            label: 'Filter',
-                            type: InputOptionType.TEXT,
-                            decorationType: 'box',
-                          },
-                        ],
-                      ]}
-                      onChange={({ form }) => {
-                        setFilterSearch(form.search);
-                      }}
-                    />
-                  </Grid>
-                  <h5>Ausgewählt</h5>
-                  <Grid flex flexR gap={4} flexWrap>
-                    {colX
-                      .filter((e) => colFilter.includes(e.key))
-                      .map((c) => (
-                        <button
-                          type="button"
-                          className="col-filter-button"
-                          onClick={() => {
-                            if (colFilter.length > 1) {
-                              const list = colFilter.filter((e) => e !== c.key);
-                              LocalStorage.jsonSave<string[]>('filter', list);
-                              setColFilter(list);
-                            }
-                          }}
-                        >
-                          <Grid flex flexR gap={4} center>
-                            {c.icon}
-                            {c.title}
-                          </Grid>
-                        </button>
-                      ))}
-                  </Grid>
-                  <h5>Verfügbar - Allgemein</h5>
-                  <Grid flex flexR gap={4} flexWrap>
-                    {colX
-                      .filter((e) => e.type === 0 && !colFilter.includes(e.key))
-                      .map((c) => (
-                        <button
-                          type="button"
-                          className="col-filter-button"
-                          onClick={() => {
-                            const list = [...colFilter, c.key];
-                            LocalStorage.jsonSave<string[]>('filter', list);
-                            setColFilter(list);
-                          }}
-                        >
-                          <Grid flex flexR gap={4} center>
-                            {c.icon}
-                            {c.title}
-                          </Grid>
-                        </button>
-                      ))}
-                  </Grid>
-
-                  <h5>Verfügbar - Weekly</h5>
-                  <Grid flex flexR gap={4} flexWrap>
-                    {colX
-                      .filter((e) => e.type === 1 && !colFilter.includes(e.key))
-                      .map((c) => (
-                        <button
-                          type="button"
-                          className="col-filter-button"
-                          onClick={() => {
-                            const list = [...colFilter, c.key];
-                            LocalStorage.jsonSave<string[]>('filter', list);
-                            setColFilter(list);
-                          }}
-                        >
-                          <Grid flex flexR gap={4} center>
-                            {c.icon}
-                            {c.title}
-                          </Grid>
-                        </button>
-                      ))}
-                  </Grid>
-                  {[
-                    {
-                      x: 0,
-                      name: 'Classic',
-                    },
-                    {
-                      x: 1,
-                      name: 'Burning Crusade',
-                    },
-                    {
-                      x: 2,
-                      name: 'WotLK',
-                    },
-                    {
-                      x: 3,
-                      name: 'Cata',
-                    },
-                    {
-                      x: 4,
-                      name: 'MoP',
-                    },
-                    {
-                      x: 5,
-                      name: 'WoD',
-                    },
-                    {
-                      x: 6,
-                      name: 'Legion',
-                    },
-                    {
-                      x: 7,
-                      name: 'BfA',
-                    },
-                    {
-                      x: 8,
-                      name: 'Shadowlands',
-                    },
-                    {
-                      x: 9,
-                      name: 'Dragonflight',
-                    },
-                    {
-                      x: 10,
-                      name: 'The War Within',
-                    },
-                  ]
-                    .toReversed()
-                    .map(({ x, name }) => (
-                      <>
-                        <h5>Instanzen - {name}</h5>
-                        <Grid flex flexR gap={4} flexWrap>
-                          {colX
-                            .filter(
-                              (e) =>
-                                e.type === 2 &&
-                                e.mod === x &&
-                                !colFilter.includes(e.key),
-                            )
-                            .map((c) => (
-                              <button
-                                type="button"
-                                className="col-filter-button"
-                                onClick={() => {
-                                  const list = [...colFilter, c.key];
-                                  LocalStorage.jsonSave<string[]>(
-                                    'filter',
-                                    list,
-                                  );
-                                  setColFilter(list);
-                                }}
-                              >
-                                <Grid flex flexR gap={4} center>
-                                  {c.icon}
-                                  {c.title}
-                                </Grid>
-                              </button>
-                            ))}
-                        </Grid>
-                      </>
-                    ))}
+                  />
+                  <span>Nur Max-Level Chars |</span>
                 </Grid>
-              ),
-            },
-            {
-              key: 'chars',
-              name: `Charaktere (${charFilter.length})`,
-              render: (
-                <>
-                  <Grid flex flexR className="glx-mb-12" gap={8} vCenter>
-                    <input
-                      className="search-field"
-                      type="text"
-                      placeholder="Filter/Suche (Name,Server,Klasse,Rasse,Level,Fraktion)"
-                      style={{ width: 400 }}
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                    {search !== '' && (
-                      <button onClick={() => setSearch('')}>
-                        <IOClose />
-                      </button>
-                    )}
-                    <Grid flex flexR vCenter gap={4}>
-                      <CheckBox
-                        checked={onlyMax}
-                        onChange={(e) => {
-                          setOnlyMax(e);
-                          LocalStorage.flagSave('max-only', e);
-                        }}
-                      />
-                      <span>Nur Max-Level Chars |</span>
-                    </Grid>
-                    <div>Ansichten:</div>
-                    <Tooltip text="Alle Elemente Anzeigen">
-                      <button
-                        type="button"
-                        disabled={mode === 'all'}
-                        onClick={() => setMode('all')}
-                      >
-                        <IOGlobe />
-                      </button>
-                    </Tooltip>
-                    <Tooltip text="Nur Weeklys anzeigen">
-                      <button
-                        type="button"
-                        disabled={mode === 'weekly'}
-                        onClick={() => setMode('weekly')}
-                      >
-                        <IOTime />
-                      </button>
-                    </Tooltip>
-                    <Tooltip text="Nur Instanzen anzeigen">
-                      <button
-                        type="button"
-                        disabled={mode === 'instance'}
-                        onClick={() => setMode('instance')}
-                      >
-                        <IODice />
-                      </button>
-                    </Tooltip>
-                  </Grid>
-                  <div className="table-wrapper">
-                    <table>
-                      <thead>
-                        <tr>
-                          {colList
-                            .filter((e) => modeColFilter.includes(e.key))
-                            .map((e) => getColumn(e.key))
-                            .map((col) => (
-                              <th
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  if (col.sort) {
-                                    if (
-                                      sort.key !== col.key ||
-                                      sort.order === 'DSC'
-                                    ) {
-                                      setSort({
-                                        key: col.key,
-                                        order: 'ASC',
-                                      });
-                                    } else {
-                                      setSort({
-                                        key: col.key,
-                                        order: 'DSC',
-                                      });
-                                    }
-                                  }
-                                }}
-                              >
-                                <Grid
-                                  flex
-                                  flexR
-                                  center
-                                  gap={4}
-                                  className={[[!!col.sort, 'can-sort']]}
-                                >
-                                  {col.icon}
-                                  {col.title}
-                                  {col.key === sort.key &&
-                                    sort.order === 'DSC' && <IOChevronUp />}
-                                  {col.key === sort.key &&
-                                    sort.order === 'ASC' && <IOChevronDown />}
-                                  {col.key !== sort.key && (
-                                    <span className="hover-sort">
-                                      <IOChevronDown />
-                                    </span>
-                                  )}
-                                  {col.key !== sort.key && (
-                                    <span className="pending-sort">
-                                      <IOChevronForward />
-                                    </span>
-                                  )}
-                                </Grid>
-                              </th>
-                            ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortData.map((char) => (
-                          <tr>
-                            {colList
-                              .filter((e) => modeColFilter.includes(e.key))
-                              .map((e) => getColumn(e.key))
-                              .map((col) => (
-                                <td style={col.style}>
-                                  {col.render(char, classMap)}
-                                </td>
-                              ))}
-                          </tr>
+                <div>Ansichten:</div>
+                <Tooltip text="Alle Elemente Anzeigen">
+                  <button
+                    type="button"
+                    disabled={mode === 'all'}
+                    onClick={() => setMode('all')}
+                  >
+                    <IOGlobe />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Nur Weeklys anzeigen">
+                  <button
+                    type="button"
+                    disabled={mode === 'weekly'}
+                    onClick={() => setMode('weekly')}
+                  >
+                    <IOTime />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Nur Instanzen anzeigen">
+                  <button
+                    type="button"
+                    disabled={mode === 'instance'}
+                    onClick={() => setMode('instance')}
+                  >
+                    <IODice />
+                  </button>
+                </Tooltip>
+              </Grid>
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      {colList
+                        .filter((e) => modeColFilter.includes(e.key))
+                        .map((e) => getColumn(e.key))
+                        .map((col) => (
+                          <th
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (col.sort) {
+                                if (
+                                  sort.key !== col.key ||
+                                  sort.order === 'DSC'
+                                ) {
+                                  setSort({
+                                    key: col.key,
+                                    order: 'ASC',
+                                  });
+                                } else {
+                                  setSort({
+                                    key: col.key,
+                                    order: 'DSC',
+                                  });
+                                }
+                              }
+                            }}
+                          >
+                            <Grid
+                              flex
+                              flexR
+                              center
+                              gap={4}
+                              className={[[!!col.sort, 'can-sort']]}
+                            >
+                              {col.icon}
+                              {col.title}
+                              {col.key === sort.key && sort.order === 'DSC' && (
+                                <IOChevronUp />
+                              )}
+                              {col.key === sort.key && sort.order === 'ASC' && (
+                                <IOChevronDown />
+                              )}
+                              {col.key !== sort.key && (
+                                <span className="hover-sort">
+                                  <IOChevronDown />
+                                </span>
+                              )}
+                              {col.key !== sort.key && (
+                                <span className="pending-sort">
+                                  <IOChevronForward />
+                                </span>
+                              )}
+                            </Grid>
+                          </th>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              ),
-            },
-            {
-              key: 'klassandrass',
-              name: 'Klassen & Rassen',
-              render: <ClassRace />,
-            },
-            {
-              key: 'level',
-              name: `Level Liste (${data.missing.length})`,
-              render: <LevelChars />,
-            },
-          ]}
-        />
-      </Grid>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortData.map((char) => (
+                      <tr>
+                        {colList
+                          .filter((e) => modeColFilter.includes(e.key))
+                          .map((e) => getColumn(e.key))
+                          .map((col) => (
+                            <td style={col.style}>
+                              {col.render(char, classMap)}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          </Grid>
+        </MainFrameItem>
+        <MainFrameItem
+          frameKey="config"
+          name="Tabellen Einstellungen"
+          icon="IOGrid"
+        >
+          <FilterPage
+            colList={colList}
+            colFilter={colFilter}
+            setColFilter={setColFilter}
+          />
+        </MainFrameItem>
+        <MainFrameItem frameKey="class" name="Klassen Liste" icon="IOPeople">
+          <h2>Klassen Übersicht</h2>
+          <ClassRace />
+        </MainFrameItem>
+        <MainFrameItem frameKey="level" name="Level Liste" icon="IOArrowUp">
+          <h2>Level Liste </h2>
+          <InfoBox>
+            <b>Level Übersicht:</b>
+            <br />
+            Die Level Übersicht zeigt welche Charaktere gelevelt werden müssen
+            um alle Klassen und Rassen auf Max-Level zu bringen.
+          </InfoBox>
+          <LevelChars />
+        </MainFrameItem>
+        <MainFrameItem
+          frameKey="settings"
+          name="Einstellungen"
+          icon="IOSettings"
+        >
+          <>
+            <h2>Einstellungen</h2>
+            <Grid flex flexR gap={24}>
+              <Grid flex flexC>
+                World of Warcraft Ordner:
+                <pre>{config?.profileFolder}</pre>
+                <Button
+                  onClick={() => {
+                    window.glxApi.invoke('set-config-folder').then(() => {
+                      reloadConfig();
+                      reloadPreload();
+                      reload();
+                    });
+                  }}
+                >
+                  Auswählens
+                </Button>
+              </Grid>
+              <Grid flex flexC style={{ fontSize: '24px' }}>
+                <b>
+                  App Version:{' '}
+                  <span style={{ color: 'var(--glx-main-contrast)' }}>
+                    {preload.appVersion}
+                  </span>
+                </b>
+                <b>
+                  MadhousePack Addon:{' '}
+                  {config?.addon.mhAddon ? (
+                    <span style={{ color: 'green' }}>JA</span>
+                  ) : (
+                    <span style={{ color: 'red' }}>Nein</span>
+                  )}
+                </b>
+                <b>
+                  SavedInstances Addon:{' '}
+                  {config?.addon.siAddon ? (
+                    <span style={{ color: 'green' }}>JA</span>
+                  ) : (
+                    <span style={{ color: 'red' }}>Nein</span>
+                  )}
+                </b>
+              </Grid>
+            </Grid>
+            <InfoBox>
+              <b>Wichtig:</b>
+              <br />
+              Die App benötigt mindestens das 'MadhousePack Addon', und optional
+              'SavedInstances Addon' für Instanzen und wöchentliche quests.
+            </InfoBox>
+          </>
+        </MainFrameItem>
+      </MainFrame>
     </AppContext.Provider>
   );
 });

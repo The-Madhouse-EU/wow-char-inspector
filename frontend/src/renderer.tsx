@@ -86,6 +86,19 @@ function Root() {
               <span style={{ fontSize: '24px' }}>{timer}</span>
             </button>
           </Tooltip>
+          <Tooltip text="Öffne Madhouse Website" position="bottom">
+            <button
+              type="button"
+              onClick={() => {
+                window.glxApi.coreFunctions.openExternal({
+                  url: 'https://the-madhouse.eu',
+                  external: true,
+                });
+              }}
+            >
+              <Logo size={24} />
+            </button>
+          </Tooltip>
           <Tooltip text="Öffne WoWHead" position="bottom">
             <button
               className="wowhead-img"
