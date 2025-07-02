@@ -8,8 +8,11 @@ import React, {
 } from 'react';
 import {
   Button,
+  CheckBox,
   CMap,
+  Form,
   Grid,
+  InputOptionType,
   IOCheckmarkDone,
   IOChevronDown,
   IOChevronForward,
@@ -36,6 +39,7 @@ import AppContext, {
   AppContextData,
   DefaultContextData,
 } from '@/context/AppContext';
+import { Instance, Raid, Weekly } from '@/component/Ico';
 
 moment.locale('de');
 
@@ -52,9 +56,13 @@ const App = forwardRef<
   }
 >(({ preload, reloadPreload }, ref) => {
   const [search, setSearch] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
 
   const [colFilter, setColFilter] = useState<string[]>(
     LocalStorage.jsonLoad<string[]>('filter') || columnList.map((e) => e.key),
+  );
+  const [onlyMax, setOnlyMax] = useState<boolean>(
+    LocalStorage.flagLoad('max-only'),
   );
 
   const [mode, setMode] = useState<'all' | 'weekly' | 'instance'>('all');
@@ -85,22 +93,38 @@ const App = forwardRef<
         key: e.key,
         type: 0,
         title: e.title,
+        icon: e.icon,
         mod: 0,
       })),
       ...preload.weekly.map((e) => ({
         key: e.e_id,
         type: 1,
-        title: `(W) ${e.anzeige_text}`,
+        title: e.anzeige_text,
+        icon: <Weekly />,
         mod: 0,
       })),
       ...preload.instanzen.map((e) => ({
         key: e.e_id,
         type: 2,
-        title: `(${e.instance_type === 'Raid' ? 'R' : 'D'}) ${e.e_id}`,
+        title: e.e_id,
+        icon: e.instance_type === 'Raid' ? <Raid /> : <Instance />,
         mod: e.expansion,
       })),
     ];
   }, [preload.instanzen, preload.weekly]);
+  const colX = useMemo(() => {
+    if (!filterSearch || filterSearch === '') {
+      return colList;
+    }
+    const lower = filterSearch.toLowerCase();
+    return colList.filter((c) => {
+      return (
+        (typeof c.title === 'string'
+          ? c.title.toLowerCase().includes(lower)
+          : false) || c.key.toLowerCase().includes(lower)
+      );
+    });
+  }, [colList, filterSearch]);
 
   const [data, , reload] = useQData<DataType>(async () => {
     return window.glxApi.invoke('get-info', { preload: true });
@@ -144,15 +168,16 @@ const App = forwardRef<
     const lower = search.toLowerCase();
     return data.chars.filter(
       (c) =>
-        c.name.toLowerCase().includes(lower) ||
-        c.faction.toLowerCase().includes(lower) ||
-        c.playerClass.toLowerCase().includes(lower) ||
-        c.rase.toLowerCase().includes(lower) ||
-        c.level.toString().includes(lower) ||
-        c.server.toLowerCase().includes(lower) ||
-        (c.meta.raw && c.meta.raw.spec.toLowerCase().includes(lower)),
+        (!onlyMax || c.level === 80) &&
+        (c.name.toLowerCase().includes(lower) ||
+          c.faction.toLowerCase().includes(lower) ||
+          c.playerClass.toLowerCase().includes(lower) ||
+          c.rase.toLowerCase().includes(lower) ||
+          c.level.toString().includes(lower) ||
+          c.server.toLowerCase().includes(lower) ||
+          (c.meta.raw && c.meta.raw.spec.toLowerCase().includes(lower))),
     );
-  }, [data, search]);
+  }, [data, search, onlyMax]);
 
   const [sort, setSort] = useState<{ key: string; order: 'ASC' | 'DSC' }>({
     key: 'level',
@@ -172,7 +197,10 @@ const App = forwardRef<
           key,
           title: (
             <Tooltip position="bottom" text={weeklyField.note}>
-              {weeklyField.anzeige_text}
+              <Grid flex flexR vCenter gap={4}>
+                <Weekly />
+                {weeklyField.anzeige_text}
+              </Grid>
             </Tooltip>
           ),
           render: (char) =>
@@ -204,7 +232,14 @@ const App = forwardRef<
           key,
           title: (
             <Tooltip position="bottom" text={instanceField.instance_type}>
-              {instanceField.e_id}
+              <Grid flex flexR vCenter gap={4}>
+                {instanceField.instance_type === 'Raid' ? (
+                  <Raid />
+                ) : (
+                  <Instance />
+                )}
+                {instanceField.e_id}
+              </Grid>
             </Tooltip>
           ),
           render: (char) => (
@@ -269,7 +304,6 @@ const App = forwardRef<
     <AppContext.Provider value={contextData}>
       <Grid flex flexC className="app" gap={24}>
         <h2>Übersicht</h2>
-
         <PortalStepper
           offset={150}
           className="stepper"
@@ -351,9 +385,29 @@ const App = forwardRef<
               collapsed: true,
               render: (
                 <Grid flex flexC gap={24} className="glx-py-12" flexWrap>
+                  <Grid flex flexR gap={4} flexWrap>
+                    <Form
+                      defaultState={{
+                        search: filterSearch,
+                      }}
+                      options={[
+                        [
+                          {
+                            key: 'search',
+                            label: 'Filter',
+                            type: InputOptionType.TEXT,
+                            decorationType: 'box',
+                          },
+                        ],
+                      ]}
+                      onChange={({ form }) => {
+                        setFilterSearch(form.search);
+                      }}
+                    />
+                  </Grid>
                   <h5>Ausgewählt</h5>
                   <Grid flex flexR gap={4} flexWrap>
-                    {colList
+                    {colX
                       .filter((e) => colFilter.includes(e.key))
                       .map((c) => (
                         <button
@@ -368,6 +422,7 @@ const App = forwardRef<
                           }}
                         >
                           <Grid flex flexR gap={4} center>
+                            {c.icon}
                             {c.title}
                           </Grid>
                         </button>
@@ -375,7 +430,7 @@ const App = forwardRef<
                   </Grid>
                   <h5>Verfügbar - Allgemein</h5>
                   <Grid flex flexR gap={4} flexWrap>
-                    {colList
+                    {colX
                       .filter((e) => e.type === 0 && !colFilter.includes(e.key))
                       .map((c) => (
                         <button
@@ -388,6 +443,7 @@ const App = forwardRef<
                           }}
                         >
                           <Grid flex flexR gap={4} center>
+                            {c.icon}
                             {c.title}
                           </Grid>
                         </button>
@@ -396,7 +452,7 @@ const App = forwardRef<
 
                   <h5>Verfügbar - Weekly</h5>
                   <Grid flex flexR gap={4} flexWrap>
-                    {colList
+                    {colX
                       .filter((e) => e.type === 1 && !colFilter.includes(e.key))
                       .map((c) => (
                         <button
@@ -409,6 +465,7 @@ const App = forwardRef<
                           }}
                         >
                           <Grid flex flexR gap={4} center>
+                            {c.icon}
                             {c.title}
                           </Grid>
                         </button>
@@ -465,7 +522,7 @@ const App = forwardRef<
                       <>
                         <h5>Instanzen - {name}</h5>
                         <Grid flex flexR gap={4} flexWrap>
-                          {colList
+                          {colX
                             .filter(
                               (e) =>
                                 e.type === 2 &&
@@ -486,6 +543,7 @@ const App = forwardRef<
                                 }}
                               >
                                 <Grid flex flexR gap={4} center>
+                                  {c.icon}
                                   {c.title}
                                 </Grid>
                               </button>
@@ -515,6 +573,16 @@ const App = forwardRef<
                         <IOClose />
                       </button>
                     )}
+                    <Grid flex flexR vCenter gap={4}>
+                      <CheckBox
+                        checked={onlyMax}
+                        onChange={(e) => {
+                          setOnlyMax(e);
+                          LocalStorage.flagSave('max-only', e);
+                        }}
+                      />
+                      <span>Nur Max-Level Chars |</span>
+                    </Grid>
                     <div>Ansichten:</div>
                     <Tooltip text="Alle Elemente Anzeigen">
                       <button
@@ -580,6 +648,7 @@ const App = forwardRef<
                                   gap={4}
                                   className={[[!!col.sort, 'can-sort']]}
                                 >
+                                  {col.icon}
                                   {col.title}
                                   {col.key === sort.key &&
                                     sort.order === 'DSC' && <IOChevronUp />}

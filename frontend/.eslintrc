@@ -37,6 +37,7 @@
     "no-await-in-loop": "warn",
     "class-methods-use-this": "warn",
     "linebreak-style": "off",
+    "react/require-default-props": "off",
     "no-restricted-properties": "warn",
     "jsx-a11y/click-events-have-key-events": "warn",
     "jsx-a11y/no-static-element-interactions": "warn",

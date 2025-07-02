@@ -16,7 +16,8 @@ function shortenKey(kesStr?: string) {
 
 export type TableColumn = {
   key: string;
-  title: React.ReactNode;
+  title: string | React.ReactNode;
+  icon?: React.ReactNode | null;
   render: (char: Character, colorMap: Map<string, string>) => React.ReactNode;
   style?: CSSProperties;
   sort?: (a: Character, b: Character) => number;
@@ -189,12 +190,8 @@ const columnList: TableColumn[] = [
   },
   {
     key: 'gold',
-    title: (
-      <>
-        <span className="gold-img" />
-        Gold
-      </>
-    ),
+    icon: <span className="gold-img" />,
+    title: 'Gold',
     render: ({ meta }) => {
       const g = Math.trunc((meta.raw?.money || 0) / 10000);
       if (g > 1000000) {
@@ -212,22 +209,15 @@ const columnList: TableColumn[] = [
   },
   {
     key: 'tw-coin',
-    title: (
-      <>
-        <span className="timewalk-img" />
-        TW Marken
-      </>
-    ),
+    icon: <span className="timewalk-img" />,
+    title: 'TW Marken',
     render: ({ meta }) => meta.raw?.currency['1166'] ?? '?',
     style: { color: 'lightblue' },
   },
   {
     key: 'delve-key',
-    title: (
-      <>
-        <span className="key-img" /> Delve Key
-      </>
-    ),
+    icon: <span className="key-img" />,
+    title: 'Delve Key',
     render: ({ meta }) => meta.raw?.currency['3028'] ?? '?',
     style: { color: '#a86537' },
   },
