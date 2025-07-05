@@ -161,7 +161,7 @@ a:hover {
 }
 
 .app{
-  width: calc(100% - 64px);
+  width: 100%;
   height: calc(100% - 4px);
 }
 
@@ -333,4 +333,43 @@ th > .can-sort {
 }
 .sx-header{
   border-bottom: 1px solid $main-accent-03;
+}
+.instance-board{
+  display: none;
+}
+.instance-mode{
+  th {
+    padding-left: 0;
+    padding-right: 0;
+    > .glx-flex {
+      flex-direction:column;
+      >*{
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+      }
+    }
+  }
+  th, td {
+    min-width: 0;
+  }
+  thead th{
+    position: unset;
+  }
+  .instance-board{
+    display: flex;
+  }
+  .instance-normal{
+    display: none;
+  }
+  svg.green-ico{
+     path{
+      stroke: green;
+    }
+  }
+  svg.red-ico{
+     path{
+      stroke: red;
+      fill: red;
+    }
+  }
 }

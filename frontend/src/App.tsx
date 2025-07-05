@@ -10,6 +10,7 @@ import {
   Button,
   CheckBox,
   CMap,
+  cnx,
   Grid,
   IOCheckmarkDone,
   IOChevronDown,
@@ -108,6 +109,7 @@ const App = forwardRef<
         title: e.e_id,
         icon: e.instance_type === 'Raid' ? <Raid /> : <Instance />,
         mod: e.expansion,
+        raid: e.instance_type === 'Raid',
       })),
     ];
   }, [preload.instanzen, preload.weekly]);
@@ -228,14 +230,35 @@ const App = forwardRef<
               </Grid>
             </Tooltip>
           ),
-          render: (char) => (
-            <Grid flex flexR hCenter style={{ color: 'green' }}>
-              {char.meta.instances
-                ?.find((e) => e.instance === key)
-                ?.difficulties.map((d) => DiffMap.get(d))
-                .join(' + ') || <span style={{ color: 'red' }}>frei</span>}
-            </Grid>
-          ),
+          render: (char) => {
+            const el = char.meta.instances
+              ?.find((e) => e.instance === key)
+              ?.difficulties.map((d) => DiffMap.get(d) || d.toString());
+            return (
+              <>
+                <Grid
+                  className="instance-normal"
+                  flex
+                  flexR
+                  hCenter
+                  style={{ color: 'green' }}
+                >
+                  {el?.join(' + ') || (
+                    <span style={{ color: 'red' }}>frei</span>
+                  )}
+                </Grid>
+                <Grid className="instance-board" flex flexR hCenter>
+                  <Tooltip text={el?.join(' + ')}>
+                    {el ? (
+                      <IOCheckmarkDone className="green-ico" />
+                    ) : (
+                      <IOClose className="red-ico" />
+                    )}
+                  </Tooltip>
+                </Grid>
+              </>
+            );
+          },
           sort: (a, b) => {
             const ax =
               a.meta.instances?.find((e) => e.instance === key)?.difficulties
@@ -347,7 +370,12 @@ const App = forwardRef<
                   </button>
                 </Tooltip>
               </Grid>
-              <div className="table-wrapper">
+              <div
+                className={cnx('table-wrapper', [
+                  mode !== 'all',
+                  'instance-mode',
+                ])}
+              >
                 <table>
                   <thead>
                     <tr>

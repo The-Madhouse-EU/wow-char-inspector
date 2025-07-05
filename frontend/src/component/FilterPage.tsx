@@ -66,6 +66,7 @@ export default function FilterPage({
     title: React.ReactNode | string;
     icon: React.ReactNode | React.JSX.Element;
     mod: number;
+    raid?: boolean;
   }[];
   colFilter: string[];
   setColFilter: (list: string[]) => void;
@@ -91,9 +92,15 @@ export default function FilterPage({
       weekly: colX.filter((e) => e.type === 1 && !colFilter.includes(e.key)),
       expansion: stList.toReversed().map((x) => ({
         ...x,
-        list: colX.filter(
-          (e) => e.type === 2 && e.mod === x.x && !colFilter.includes(e.key),
-        ),
+        list: colX
+          .filter(
+            (e) => e.type === 2 && e.mod === x.x && !colFilter.includes(e.key),
+          )
+          .sort((a, b) => {
+            if (a.raid && !b.raid) return -1;
+            if (!a.raid && b.raid) return 1;
+            return a.key.toString().localeCompare(b.key.toString());
+          }),
       })),
     };
   }, [colFilter, colX]);

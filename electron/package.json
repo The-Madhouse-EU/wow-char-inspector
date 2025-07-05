@@ -1,6 +1,6 @@
 {
   "name": "wow-char-inspector",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "WoW - Char Inspector",
   "main": "dist/run.js",
   "types": "dist/run.d.ts",
@@ -18,7 +18,8 @@
     "startDevDebug": "electron-forge start --enable-logging --inspect-electron",
     "package": "npm run recompile && cross-env BUILD=production npm run buildprep && electron-forge package",
     "make": "npm run recompile && cross-env BUILD=production npm run buildprep && electron-forge make",
-    "start": "cross-env BUILD=development npm run buildprep && cross-env ELECTRON_IS_DEV=0 electron-forge start"
+    "start": "cross-env BUILD=development npm run buildprep && cross-env ELECTRON_IS_DEV=0 electron-forge start",
+    "build": "npm run buildprepDev && npm run package"
   },
   "dependencies": {
     "@grandlinex/bundle-elogger": "1.0.3",
