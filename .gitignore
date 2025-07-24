@@ -22,3 +22,4 @@ SirLootelot.iml
 /electron/package-lock.json
 *.tgz
 /frontend/package-lock.json
+/electron/dev/

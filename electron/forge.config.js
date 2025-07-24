@@ -1,10 +1,8 @@
 /* eslint-disable */
 const os = require('os');
-const path = require("path");
 
 let icon;
 // Overwrite with own img path like: res/img/[fav]icon.*
-
 switch (os.platform()) {
   case 'linux': // need a *.png img
     icon = 'res/img/icon.png';
@@ -25,14 +23,13 @@ const ignore = [
 '^/img$',
 '^/frontend$',
 '^/scripts',
+'^/dev',
 '.eslintrc',
 '.gitignore',
 '.ncurc.json',
 '.prettierrc',
 'Jenkinsfile',
-'res/luaConvert.js',
 'res/*.yml',
-'res/*.json',
 'tsconfig.json',
 'makeWin32Installer.ps1',
 '.eslintignore',
@@ -46,8 +43,18 @@ module.exports = {
 
   makers: [
     {
-      platforms: ['linux','win32'],
+      platforms: ['linux'],
       name: '@electron-forge/maker-zip'
+    },
+    {
+      platforms: ["win32"],
+      name: '@electron-forge/maker-squirrel',
+      config: {
+        authors: 'Elschnagoo',
+        description: 'WoW Character Inspector',
+        setupIcon: "./res/img/icon.ico",
+        loadingGif: "./res/img/install.gif"
+      }
     }
   ],
 };
