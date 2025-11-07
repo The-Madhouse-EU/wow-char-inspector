@@ -13,7 +13,7 @@ export default class InitLoginAction extends BaseAction {
   }
 
   async handler({ args }: XActionEvent<{ password: string }>) {
-    const kernel = this.getEKernel();
+    const kernel = this.getKernel();
     const db = kernel.getDb();
 
     const result = {

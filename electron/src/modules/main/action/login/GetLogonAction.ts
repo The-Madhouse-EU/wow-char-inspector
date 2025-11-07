@@ -11,7 +11,7 @@ export default class GetLogonAction extends BaseAction {
   }
 
   async handler() {
-    const kernel = this.getEKernel();
+    const kernel = this.getKernel();
     const kdb = kernel.getDb();
     const cc = kernel.hasCryptoClient();
 
