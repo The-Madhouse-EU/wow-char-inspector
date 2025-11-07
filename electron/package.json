@@ -1,6 +1,6 @@
 {
   "name": "wow-char-inspector",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "WoW - Char Inspector",
   "main": "dist/run.js",
   "types": "dist/run.d.ts",
@@ -8,7 +8,6 @@
   "author": "Elschnagoo",
   "scripts": {
     "buildprep": "tsc && npm --prefix ../frontend run build",
-    "buildprepDev": "tsc && npm --prefix ../frontend run build",
     "buildDev": "tsc",
     "startDev": "tsc && electron-forge start",
     "startEnvDev": "tsc && cross-env ELECTRON_IS_DEV=0 electron-forge start",
@@ -20,31 +19,32 @@
     "package": "npm run recompile && cross-env BUILD=production npm run buildprep && electron-forge package",
     "make": "npm run recompile && cross-env BUILD=production npm run buildprep && electron-forge make",
     "start": "cross-env BUILD=development npm run buildprep && cross-env ELECTRON_IS_DEV=0 electron-forge start",
-    "build": "npm run buildprepDev && npm run package"
+    "build": "npm run buildprepDev && npm run package",
+    "dev": "ts-node ./src/dev.ts"
   },
   "dependencies": {
-    "@grandlinex/bundle-elogger": "1.0.3",
-    "@grandlinex/bundle-sqlight": "1.0.3",
-    "@grandlinex/e-kernel": "1.0.2",
-    "axios": "1.10.0",
-    "electron": "36.4.0",
+    "@grandlinex/bundle-elogger": "1.2.0",
+    "@grandlinex/bundle-sqlight": "1.2.1",
+    "@grandlinex/e-kernel": "1.2.0",
+    "axios": "1.12.2",
+    "electron": "38.6.0",
     "electron-devtools-installer": "4.0.0",
     "luaparse": "0.3.1",
     "moment": "2.30.1",
     "electron-squirrel-startup": "1.0.1"
   },
   "devDependencies": {
-    "@electron-forge/cli": "7.8.1",
-    "@electron-forge/maker-dmg": "7.8.1",
-    "@electron-forge/maker-zip": "7.8.1",
-    "@electron-forge/maker-squirrel": "7.8.1",
+    "@electron-forge/cli": "7.10.2",
+    "@electron-forge/maker-deb": "7.10.2",
+    "@electron-forge/maker-zip": "7.10.2",
+    "@electron-forge/maker-squirrel": "7.10.2",
     "@types/jest": "29.5.8",
     "@types/luaparse": "0.2.12",
     "@types/node": "20.9.0",
     "@typescript-eslint/eslint-plugin": "7.16.1",
     "@typescript-eslint/parser": "7.16.1",
     "cross-env": "7.0.3",
-    "electron": "36.4.0",
+    "electron": "38.6.0",
     "eslint": "8.57.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-config-airbnb-typescript": "18.0.0",
@@ -72,6 +72,6 @@
     "url": "https://github.com/The-Madhouse-EU/wow-char-inspector"
   },
   "engines": {
-      "npm": ">=20.7.0"
+      "npm": ">=10.7.0"
   }
 }

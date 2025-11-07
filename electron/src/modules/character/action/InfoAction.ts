@@ -1,20 +1,14 @@
-import { BaseAction, IBaseKernelModule, IKernel } from '@grandlinex/e-kernel';
+import { BaseAction, IBaseKernelModule } from '@grandlinex/e-kernel';
 import CharDB from '../db/CharDB';
 import CharClient from '../client/CharClient';
 
-export default class InfoAction extends BaseAction<
-  IKernel,
-  CharDB,
-  CharClient
-> {
+export default class InfoAction extends BaseAction<CharDB, CharClient> {
   constructor(moduele: IBaseKernelModule<any, any, any>) {
     super('get-info', moduele);
     this.handler = this.handler.bind(this);
   }
 
-  async handler(
-    event: Electron.CrossProcessExports.IpcMainInvokeEvent,
-  ): Promise<any> {
+  async handler() {
     const client = this.getModule().getClient();
 
     await client.calcAll();

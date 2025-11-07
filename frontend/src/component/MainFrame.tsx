@@ -1,7 +1,7 @@
 import {
   cnx,
-  getIcon,
   Grid,
+  Icon,
   INames,
   IOArrowBack,
   IOMenu,
@@ -95,7 +95,9 @@ export function MainFrame({
                   'sidebar-element--active',
                 ])}
               >
-                <span>{getIcon(icon)({})}</span>
+                <span>
+                  <Icon name={icon} />
+                </span>
                 <span className="sidebar--title">{name || frameKey}</span>
               </Grid>
             </Tooltip>

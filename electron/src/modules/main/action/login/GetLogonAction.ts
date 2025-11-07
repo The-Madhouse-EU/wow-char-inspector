@@ -10,7 +10,7 @@ export default class GetLogonAction extends BaseAction {
     this.handler = this.handler.bind(this);
   }
 
-  async handler(event: Electron.IpcMainInvokeEvent): Promise<any> {
+  async handler() {
     const kernel = this.getEKernel();
     const kdb = kernel.getDb();
     const cc = kernel.hasCryptoClient();

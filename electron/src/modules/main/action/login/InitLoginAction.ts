@@ -3,6 +3,7 @@ import {
   BaseCache,
   CoreCryptoClient,
   IBaseKernelModule,
+  XActionEvent,
 } from '@grandlinex/e-kernel';
 
 export default class InitLoginAction extends BaseAction {
@@ -11,10 +12,7 @@ export default class InitLoginAction extends BaseAction {
     this.handler = this.handler.bind(this);
   }
 
-  async handler(
-    event: Electron.IpcMainInvokeEvent,
-    args: { password: string },
-  ): Promise<any> {
+  async handler({ args }: XActionEvent<{ password: string }>) {
     const kernel = this.getEKernel();
     const db = kernel.getDb();
 

@@ -1,26 +1,15 @@
-import {
-  BaseAction,
-  CMap,
-  IBaseKernelModule,
-  IKernel,
-} from '@grandlinex/e-kernel';
+import { BaseAction, CMap, IBaseKernelModule } from '@grandlinex/e-kernel';
 import { app } from 'electron';
 import CharDB from '../db/CharDB';
 import CharClient from '../client/CharClient';
 
-export default class PreloadAction extends BaseAction<
-  IKernel,
-  CharDB,
-  CharClient
-> {
+export default class PreloadAction extends BaseAction<CharDB, CharClient> {
   constructor(moduele: IBaseKernelModule<any, any, any>) {
     super('get-preload', moduele);
     this.handler = this.handler.bind(this);
   }
 
-  async handler(
-    event: Electron.CrossProcessExports.IpcMainInvokeEvent,
-  ): Promise<any> {
+  async handler() {
     const client = this.getModule().getClient();
 
     await client.calcAll(true);

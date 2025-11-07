@@ -1,22 +1,16 @@
-import { BaseAction, IBaseKernelModule, IKernel } from '@grandlinex/e-kernel';
+import { BaseAction, IBaseKernelModule } from '@grandlinex/e-kernel';
 import path from 'node:path';
 import fs from 'node:fs';
 import CharDB from '../db/CharDB';
 import CharClient from '../client/CharClient';
 
-export default class TestWTFActions extends BaseAction<
-  IKernel,
-  CharDB,
-  CharClient
-> {
+export default class TestWTFActions extends BaseAction<CharDB, CharClient> {
   constructor(moduele: IBaseKernelModule<any, any, any>) {
     super('test-wtf', moduele);
     this.handler = this.handler.bind(this);
   }
 
-  async handler(
-    event: Electron.CrossProcessExports.IpcMainInvokeEvent,
-  ): Promise<any> {
+  async handler() {
     const folder = await this.getKernel()
       .getModule()
       .getDb()

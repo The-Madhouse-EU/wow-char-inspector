@@ -6,7 +6,7 @@ export default class LockAction extends BaseAction {
     this.handler = this.handler.bind(this);
   }
 
-  async handler(event: Electron.IpcMainInvokeEvent, args: any): Promise<void> {
+  async handler() {
     const cache = this.getModule().getCache() as BaseCache;
     await cache.set('login', '0');
     this.log(cache);

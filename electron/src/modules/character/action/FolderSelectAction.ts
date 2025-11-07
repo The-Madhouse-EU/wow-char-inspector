@@ -1,15 +1,11 @@
-import { BaseAction, IBaseKernelModule, IKernel } from '@grandlinex/e-kernel';
+import { BaseAction, IBaseKernelModule } from '@grandlinex/e-kernel';
 import { dialog } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import CharDB from '../db/CharDB';
 import CharClient from '../client/CharClient';
 
-export default class FolderSelectAction extends BaseAction<
-  IKernel,
-  CharDB,
-  CharClient
-> {
+export default class FolderSelectAction extends BaseAction<CharDB, CharClient> {
   firstLoad: boolean;
 
   constructor(moduele: IBaseKernelModule<any, any, any>) {
@@ -18,10 +14,7 @@ export default class FolderSelectAction extends BaseAction<
     this.firstLoad = true;
   }
 
-  async handler(
-    event: Electron.CrossProcessExports.IpcMainInvokeEvent,
-    args: unknown,
-  ): Promise<any> {
+  async handler(): Promise<any> {
     const folder = await dialog.showOpenDialog({
       properties: ['openDirectory'],
       defaultPath: 'C:\\Program Files (x86)',

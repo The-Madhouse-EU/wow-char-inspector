@@ -47,6 +47,16 @@ module.exports = {
       name: '@electron-forge/maker-zip'
     },
     {
+      platforms: ['linux'],
+      name: '@electron-forge/maker-deb',
+      config: {
+          options: {
+              maintainer: 'Elschnagoo',
+              homepage: 'https://the-madhouse.eu/'
+          }
+      }
+    },
+    {
       platforms: ["win32"],
       name: '@electron-forge/maker-squirrel',
       config: {
