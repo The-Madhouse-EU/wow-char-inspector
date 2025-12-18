@@ -30,7 +30,7 @@ export default class InfoAction extends BaseAction<CharDB, CharClient> {
     const global = await db.getConfig('global-data');
 
     return {
-      global: JSON.parse(global.c_value || '{}'),
+      global: JSON.parse(global?.c_value || '{}'),
       chars,
       classOverview: client.getClassOverview(),
       raceOverview: client.getRaceOverview(),

@@ -1,6 +1,6 @@
 {
   "name": "wow-char-inspector",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "WoW - Char Inspector",
   "main": "dist/run.js",
   "types": "dist/run.d.ts",
@@ -19,7 +19,7 @@
     "package": "npm run recompile && cross-env BUILD=production npm run buildprep && electron-forge package",
     "make": "npm run recompile && cross-env BUILD=production npm run buildprep && electron-forge make",
     "start": "cross-env BUILD=development npm run buildprep && cross-env ELECTRON_IS_DEV=0 electron-forge start",
-    "build": "npm run buildprepDev && npm run package",
+    "build": "npm run buildprep && npm run package",
     "dev": "ts-node ./src/dev.ts"
   },
   "dependencies": {
